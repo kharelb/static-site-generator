@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from markdown_blocks import markdown_to_html_node
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     dir_path_content = Path(dir_path_content)
     dest_dir_path = Path(dest_dir_path)
     if not dir_path_content.exists():
@@ -16,14 +16,14 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
         if item.is_file() and item.suffix == '.md':
             # If it's a markdown file, generate the page
             print(f"Generating page for file: {item}")
-            generate_page(item.parent, template_path, dest_dir_path)
+            generate_page(item.parent, template_path, dest_dir_path, basepath)
         elif item.is_dir():
             # If it's a directory, recursively call this function
             print(f"Entering directory: {item}")
-            generate_pages_recursive(item, template_path, dest_dir_path / item.name)
+            generate_pages_recursive(item, template_path, dest_dir_path / item.name, basepath)
 
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     from_path = f"{from_path}/index.md"
     dest_path = f"{dest_path}/index.html"
     print(f"Generating page from {from_path} to {dest_path} using template {template_path}")
@@ -38,6 +38,10 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(contents)
 
     html = template.replace("{{ Content }}", html).replace("{{ Title }}", title)
+
+    # Replace any instances of href=" with href="{basepath}/ and src=" with src="{basepath}/
+    html = re.sub(r'href="([^"]+)"', f'href="{basepath}\\1"', html)
+    html = re.sub(r'src="([^"]+)"', f'src="{basepath}\\1"', html)
 
     # Check if the destination directory exists, if not create it
     dest_dir = Path(dest_path).parent
